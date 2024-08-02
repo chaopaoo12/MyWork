@@ -17,7 +17,7 @@ class web_d():
     def get_headers(self):
         url = 'https://www.thingiverse.com/'
         self.options = webdriver.ChromeOptions()
-        self.options.page_load_strategy = ''
+        self.options.page_load_strategy = 'none'
         for (key,value) in self.headers.items():
             self.options.add_argument('%s="%s"' % (key, value))
         self.options.add_argument('headless')
@@ -33,6 +33,7 @@ class web_d():
 
     def get_options(self,ip_proxy=None):
         self.options = webdriver.chrome.options.Options()
+        self.options.page_load_strategy = 'none'
         for (key,value) in self.headers.items():
             self.options.add_argument('%s="%s"' % (key, value))
         self.options.add_argument('--blink-settings=imagesEnabled=false')
