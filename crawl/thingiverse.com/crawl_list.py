@@ -1,10 +1,13 @@
 import pandas as pd
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
 import requests
 import json
 import datetime
 import time
 from bs4 import BeautifulSoup
+
 
 class web_d():
 
@@ -14,10 +17,12 @@ class web_d():
     def get_headers(self):
         url = 'https://www.thingiverse.com/'
         self.options = webdriver.ChromeOptions()
+        self.options.page_load_strategy = ''
         for (key,value) in self.headers.items():
             self.options.add_argument('%s="%s"' % (key, value))
         self.options.add_argument('headless')
-        driver = webdriver.Chrome(chrome_options=self.options)
+        service = Service(executable_path='C:\\ProgramData\\anaconda3\\Scripts\\chromedriver.exe')
+        driver = webdriver.Chrome(service=service,chrome_options=self.options)
         driver.get(url)
         cookies=driver.get_cookies()
         driver.quit()
@@ -30,9 +35,13 @@ class web_d():
         self.options = webdriver.chrome.options.Options()
         for (key,value) in self.headers.items():
             self.options.add_argument('%s="%s"' % (key, value))
+        self.options.add_argument('--blink-settings=imagesEnabled=false')
         self.options.add_argument('headless')
+        self.options.add_argument('–-disable-javascript')   #禁用javascript
+        self.options.add_argument('--disable-plugins')   #禁用插件
+        self.options.add_argument("--disable--gpu")#禁用显卡
+        self.options.add_argument("--disable-images")#禁用图像
         self.options.add_argument("--no-sandbox")
-        self.options.add_argument('--disable-gpu')
         self.options.add_argument("--disable-dev-shm-usage")
         self.options.add_experimental_option("excludeSwitches", ["enable-automation"])
         self.options.add_experimental_option('useAutomationExtension', False)
@@ -41,7 +50,8 @@ class web_d():
 
     def get_driver(self,ip_proxy=None):
         self.get_options(ip_proxy)
-        driver = webdriver.Chrome(options=self.options)
+        service = Service(executable_path='C:\\ProgramData\\anaconda3\\Scripts\\chromedriver.exe')
+        driver = webdriver.Chrome(service=service,options=self.options)
         driver.get('https://www.thingiverse.com/')
         cookies=driver.get_cookies()
         driver.quit()
@@ -57,33 +67,19 @@ class web_d():
     
 def get_soup(driver):
     soup = BeautifulSoup(driver.page_source, "html.parser").body
-    #k = 1
-    #while soup is None or soup.text == 'Request was throttled. Please wait a moment and refresh the page':
-    #    print('get soup {} times.'.format(k))
-    #    k += 1
-    #    driver.refresh()
-    #    time.sleep(3)
-    #    soup = BeautifulSoup(driver.page_source, "html.parser").body
     return(soup)
 
 def read_data_from(driver, url):
     print('read data from:', url.encode('ascii', 'ignore').decode('unicode_escape'))
     driver.get(url.encode('ascii', 'ignore').decode('unicode_escape'))
-    # if url is not None:
-    #     try:
-    #         driver.get(url.encode('ascii', 'ignore').decode('unicode_escape'))
-    #         #element = EC.url_changes(url)
-    #         #try:
-    #         #    WebDriverWait(driver, 5).until(element)
-    #         #    flag1 = element(driver)
-    #         #except:
-    #         #    flag1 = element(driver)
-
-    #         #if flag1
-    #         #driver.implicitly_wait(10)
-    #     except:
-    #         print(url)
     return(driver)
+
+def get_nextpage(driver):
+    if driver.find_element(By.XPATH,'//*[@aria-label="Next page"]').get_attribute('disabled') is True:
+        return(True)
+    else:
+        driver.find_element(By.XPATH,'//*[@aria-label="Next page"]').click()
+
 
 def get_info_listPage(html):
     docs = html.find_all(class_='item-card-container')
@@ -122,7 +118,6 @@ def read_info_listPage(html):
                          })
     return(temp)
 
-
 def get_info_itemPage(html):
     docs = html.find_all(class_='DetailPageTitle__thingTitleMeta--P5VUn') #上架日期
 
@@ -149,18 +144,15 @@ def get_info_itemPage(html):
 def read_info_itemPage(html):
     username, userlink, itemlink, itemtitle, itemid = get_info_listPage(html)
     #, comments, price 
-    temp = pd.DataFrame({'username':username,
-                         'userlink':userlink,
-                         'itemlink': itemlink,
-                         'itemtitle': itemtitle,
-                         'itemid': itemid
-                         #'itemjpg': href,
-                         #'itemlike': star,
-                         #'itemcollect': comments,
-                         #'itemcomments': price
+    temp = pd.DataFrame({'itemid':itemid,
+                         'uploaddate':uploaddate,
+                         'license': license,
+                         'files': itemtitle
                          })
     return(temp)
 
+id = 'CybotCookiebotDialog'
+id = 'CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll'
 
 def read_userpage(web_d, url):
     pass
@@ -169,7 +161,7 @@ def download_files(web_d, url):
     pass
 
 
-def get_product_info_listpage(url, driver):
+def get_product_info_listpage(url, driver, next_page = True):
 
     driver = read_data_from(driver, url)
     print('load url success')
@@ -182,7 +174,7 @@ def get_product_info_listpage(url, driver):
 
 
 if __name__ == '__main__':
-    url = 'https://www.thingiverse.com/?page=1&sort=newest'
+    url = 'https://www.thingiverse.com/?page=500&sort=newest#google_vignette'
     headers = {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
                'Accept-Language': 'zh-CN,zh;q=0.9',
                'Cache-Control': 'max-age=0',
