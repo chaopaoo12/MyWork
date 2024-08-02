@@ -97,29 +97,28 @@ def get_info_listPage(html):
            [doc.find(class_='ItemCardHeader__itemCardHeader--cPULo').text 
             if doc.find(class_='ItemCardHeader__itemCardHeader--cPULo') is not None else None for doc in docs],
            [doc.find(class_='ItemCardHeader__itemCardHeader--cPULo').get('href') 
-            if doc.find(class_='ItemCardHeader__itemCardHeader--cPULo') is not None else None for doc in docs]
-           #[doc.find(class_='ItemCardHeader__itemCardHeader--cPULo').get('href') for doc in docs],
-           #[doc.find('div',{'class':['_cDEzb_p13n-sc-css-line-clamp-3_g3dy1',
-           #                         '_cDEzb_p13n-sc-css-line-clamp-4_2q2cc']}).text if doc.find('div',{'class':['_cDEzb_p13n-sc-css-line-clamp-3_g3dy1','_cDEzb_p13n-sc-css-line-clamp-4_2q2cc']}) is not None else None for doc in docs],
-           #[doc.find(attrs={'class':'a-link-normal','tabindex':'-1'}).get('href') if doc.find(attrs={'class':'a-link-normal','tabindex':'-1'}) is not None else None for doc in docs],
-           #[doc.find(class_='p13n-sc-uncoverable-faceout').get('id') if doc.find(class_='p13n-sc-uncoverable-faceout') is not None else None for doc in docs],
-           #[doc.find(class_='a-icon-alt').text.replace(' out of 5 stars','') if doc.find(class_='a-icon-alt') is not None else None for doc in docs],
-           #[doc.find(class_='a-size-small').text.replace(',','') if doc.find(class_='a-size-small') is not None else 0 for doc in docs],
-           #[doc.find(class_='a-size-base').text.replace('$','').replace('\xa0','') if doc.find(class_='a-size-base') is not None else 0 for doc in docs]
+            if doc.find(class_='ItemCardHeader__itemCardHeader--cPULo') is not None else None for doc in docs],
+           [doc.find(class_='Image__image--MeY7Y ItemCardContent__itemCardContentImage--uzD0A').get('src') 
+            if doc.find(class_='Image__image--MeY7Y ItemCardContent__itemCardContentImage--uzD0A') is not None else None for doc in docs],
+           [doc.find(attrs={'aria-label':'Like'}).find(class_='ButtonCounterWrapper__buttonCounter--YXhXL') 
+            if doc.find(attrs={'aria-label':'Like'}) is not None else None for doc in docs],
+           [doc.find(attrs={'aria-label':'Collect Thing'}).find(class_='ButtonCounterWrapper__buttonCounter--YXhXL') 
+            if doc.find(attrs={'aria-label':'Collect Thing'}) is not None else None for doc in docs],
+            [doc.find(attrs={'aria-label':'Thing comments'}).find(class_='ButtonCounterWrapper__buttonCounter--YXhXL') 
+            if doc.find(attrs={'aria-label':'Thing comments'}) is not None else None for doc in docs]
            )
 
 def read_info_listPage(html):
-    username, userlink, itemlink, itemtitle, itemid = get_info_listPage(html)
-    #, comments, price 
+    username, userlink, itemlink, itemtitle, itemid, itemjpg, itemlike, itemcollect, itemcomments = get_info_listPage(html)
     temp = pd.DataFrame({'username':username,
                          'userlink':userlink,
                          'itemlink': itemlink,
                          'itemtitle': itemtitle,
-                         'itemid': itemid
-                         #'itemjpg': href,
-                         #'itemlike': star,
-                         #'itemcollect': comments,
-                         #'itemcomments': price
+                         'itemid': itemid,
+                         'itemjpg': itemjpg,
+                         'itemlike': itemlike,
+                         'itemcollect': itemcollect,
+                         'itemcomments': itemcomments
                          })
     return(temp)
 
