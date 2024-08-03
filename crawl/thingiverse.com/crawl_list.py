@@ -1,11 +1,17 @@
+# -*- encoding: utf-8 -*-
+'''
+@File    :   crawl_list.py
+@Time    :   2024/08/03 13:56:18
+@Author  :   chaopaoo12 
+@Version :   1.0
+@Contact :   chaopaoo12@hotmail.com
+'''
+
+# here put the import lib
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-import requests
-import json
-import datetime
-import time
 from bs4 import BeautifulSoup
 
 
@@ -50,23 +56,37 @@ class web_d():
             self.options.add_argument(ip_proxy)
 
     def get_driver(self,ip_proxy=None):
-        self.get_options(ip_proxy)
+        #self.get_options(ip_proxy)
         service = Service(executable_path='C:\\ProgramData\\anaconda3\\Scripts\\chromedriver.exe')
-        driver = webdriver.Chrome(service=service,options=self.options)
-        driver.get('https://www.thingiverse.com/')
-        cookies=driver.get_cookies()
-        driver.quit()
-        ck = dict()
-        for i in cookies:
-            ck[i['name']] = i['value']
-
-        self.headers.update({"Cookie":' ;'.join([k+'='+v for (k,v) in ck.items()])})
-        option = self.get_options(ip_proxy)
-        self.driver = webdriver.Chrome(options=option)
+        # driver = webdriver.Chrome(service=service,options=self.options)
+        # driver.get('https://www.thingiverse.com/')
+        # print(driver.page_source)
+        # cookies=driver.get_cookies()
+        # driver.quit()
+        # ck = dict()
+        # for i in cookies:
+        #     ck[i['name']] = i['value']
+        # self.headers.update({"Cookie":' ;'.join([k+'='+v for (k,v) in ck.items()])})
+        # option = self.get_options(ip_proxy)
+        # print(option)
+        options = webdriver.ChromeOptions()
+        options.add_argument('--blink-settings=imagesEnabled=false')
+        options.add_argument('headless')
+        options.add_argument('–-disable-javascript')   #禁用javascript
+        options.add_argument('--disable-plugins')   #禁用插件
+        options.add_argument("--disable--gpu")#禁用显卡
+        options.add_argument("--disable-images")#禁用图像
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option('useAutomationExtension', False)
+        prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': 'E:\\workspace\\python\\mywork\\download'}
+        options.add_experimental_option('prefs', prefs)
+        self.driver = webdriver.Chrome(service=service,options=options)
         return(self.driver)
-
     
 def get_soup(driver):
+    driver.find_element(By.ID,'CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll').click()
     soup = BeautifulSoup(driver.page_source, "html.parser").body
     return(soup)
 
@@ -75,16 +95,14 @@ def read_data_from(driver, url):
     driver.get(url.encode('ascii', 'ignore').decode('unicode_escape'))
     return(driver)
 
-def get_nextpage(driver):
+def get_nextPage(driver):
     if driver.find_element(By.XPATH,'//*[@aria-label="Next page"]').get_attribute('disabled') is True:
         return(True)
     else:
         driver.find_element(By.XPATH,'//*[@aria-label="Next page"]').click()
 
-
 def get_info_listPage(html):
     docs = html.find_all(class_='item-card-container')
-
     return([doc.find(class_='ItemCardContent__itemCardUserLink--gMgsV').text  
             if doc.find(class_='ItemCardContent__itemCardUserLink--gMgsV') is not None else None for doc in docs],
            [doc.find(class_='ItemCardContent__itemCardUserLink--gMgsV').get('href') 
@@ -106,61 +124,43 @@ def get_info_listPage(html):
            )
 
 def read_info_listPage(html):
-    username, userlink, itemlink, itemtitle, itemid, itemjpg, itemlike, itemcollect, itemcomments = get_info_listPage(html)
-    temp = pd.DataFrame({'username':username,
-                         'userlink':userlink,
-                         'itemlink': itemlink,
-                         'itemtitle': itemtitle,
-                         'itemid': itemid,
-                         'itemjpg': itemjpg,
-                         'itemlike': itemlike,
-                         'itemcollect': itemcollect,
-                         'itemcomments': itemcomments
+    userName, userLink, itemLink, itemTitle, itemId, itemImg, itemLike, itemCollect, itemComments = get_info_listPage(html)
+    temp = pd.DataFrame({'userName':userName,
+                         'userLink':userLink,
+                         'itemLink': itemLink,
+                         'itemTitle': itemTitle,
+                         'itemId': itemId,
+                         'itemImg': itemImg,
+                         'itemLike': itemLike,
+                         'itemCollect': itemCollect,
+                         'itemComments': itemComments
                          })
     return(temp)
 
 def get_info_itemPage(html):
-    docs = html.find_all(class_='DetailPageTitle__thingTitleMeta--P5VUn') #上架日期
-
-    docs = html.find_all(class_='TagList__tagList--DkseJ').find_all(class_='Button__buttonContent--AZZB4 button-content').text #tags
-
-    docs = html.find_all(class_='License__licenseText--iIyuZ').find_all(class_='Button__buttonContent--AZZB4 button-content') #license
-    pass
-
-    #return([doc.find(class_='ItemCardContent__itemCardUserLink--gMgsV').text for doc in docs],
-    #       [doc.find(class_='ItemCardContent__itemCardUserLink--gMgsV').get('href') for doc in docs],
-    #       [doc.find(class_='ItemCardHeader__itemCardHeader--cPULo').get('href') for doc in docs],
-    #       [doc.find(class_='ItemCardHeader__itemCardHeader--cPULo').text for doc in docs],
-    #       [doc.find(class_='ItemCardHeader__itemCardHeader--cPULo').get('href') for doc in docs]
-           #[doc.find(class_='ItemCardHeader__itemCardHeader--cPULo').get('href') for doc in docs],
-           #[doc.find('div',{'class':['_cDEzb_p13n-sc-css-line-clamp-3_g3dy1',
-           #                         '_cDEzb_p13n-sc-css-line-clamp-4_2q2cc']}).text if doc.find('div',{'class':['_cDEzb_p13n-sc-css-line-clamp-3_g3dy1','_cDEzb_p13n-sc-css-line-clamp-4_2q2cc']}) is not None else None for doc in docs],
-           #[doc.find(attrs={'class':'a-link-normal','tabindex':'-1'}).get('href') if doc.find(attrs={'class':'a-link-normal','tabindex':'-1'}) is not None else None for doc in docs],
-           #[doc.find(class_='p13n-sc-uncoverable-faceout').get('id') if doc.find(class_='p13n-sc-uncoverable-faceout') is not None else None for doc in docs],
-           #[doc.find(class_='a-icon-alt').text.replace(' out of 5 stars','') if doc.find(class_='a-icon-alt') is not None else None for doc in docs],
-           #[doc.find(class_='a-size-small').text.replace(',','') if doc.find(class_='a-size-small') is not None else 0 for doc in docs],
-           #[doc.find(class_='a-size-base').text.replace('$','').replace('\xa0','') if doc.find(class_='a-size-base') is not None else 0 for doc in docs]
-    #       )
+    return([html.find(class_='DetailPageTitle__thingTitleMeta--P5VUn').find('div').text, #上架日期
+            ','.join([i.text for i in html.find(class_='TagList__tagList--DkseJ').find_all(class_='Button__buttonContent--AZZB4 button-content')]), #tags
+            html.find(class_='License__licenseText--iIyuZ').text, #license
+            html.find(class_='DetailPageTitle__thingTitleName--sGpkS').text 
+            ]
+           )
 
 def read_info_itemPage(html):
-    username, userlink, itemlink, itemtitle, itemid = get_info_listPage(html)
+    upLoadDate, Tags, license,itemTitle = get_info_listPage(html)
     #, comments, price 
-    temp = pd.DataFrame({'itemid':itemid,
-                         'uploaddate':uploaddate,
+    temp = pd.DataFrame({
+                         'upLoadDate':upLoadDate,
+                         'Tags': Tags,
                          'license': license,
-                         'files': itemtitle
+                         'itemTitle':itemTitle
                          })
     return(temp)
-
-id = 'CybotCookiebotDialog'
-id = 'CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll'
 
 def read_userpage(web_d, url):
     pass
 
 def download_files(web_d, url):
     pass
-
 
 def get_product_info_listpage(url, driver, next_page = True):
 
@@ -172,7 +172,6 @@ def get_product_info_listpage(url, driver, next_page = True):
     print('read html success')
     driver.quit()
     return(temp)
-
 
 if __name__ == '__main__':
     url = 'https://www.thingiverse.com/?page=500&sort=newest#google_vignette'
