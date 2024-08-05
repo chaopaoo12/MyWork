@@ -14,6 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import pandas as pd
 import time
+
     
 def get_soup(driver):
     WebDriverWait(driver,60).until(EC.presence_of_element_located((By.CLASS_NAME,'ItemCardContent__itemCardLinkFiller--uj5HM'))) 
@@ -33,10 +34,11 @@ def get_nextPage(driver):
             return(False)
     except:
         return(True)
-        
+
 def download_files(driver):
     if len(driver.find_elements(By.XPATH,'//*[@aria-label="Open download modal"]')) != 0:
         driver.find_element(By.XPATH,'//*[@aria-label="Open download modal"]').click()
+    int(round(time.time()*1000))
 
 def check_success(driver):
     while driver.find_element(By.CLASS_NAME,'Modal__modalTitle--Sk0ox').text != 'Downloading...':

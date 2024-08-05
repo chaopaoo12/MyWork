@@ -10,7 +10,8 @@
 # here put the import lib
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-
+import re
+import time
 
 def enable_download(driver, download_dir):
     driver.execute_cdp_cmd("Page.setDownloadBehavior", {
@@ -59,11 +60,21 @@ class web_d():
     def init_driver(self, url='https://www.thingiverse.com/'):
         self.init_options()
         service = Service(executable_path=self.DRIVER_PATH)
-        driver = webdriver.Chrome(service=service,options=self.options)
-        driver.get(url)
-        self.update_cookie(driver)
-        driver.quit()
         self.driver = webdriver.Chrome(service=service,options=self.options)
+        self.driver.get(url)
+        self.update_cookie(self.driver)
+        self.get_authorization()
+        self.driver.quit()
+        self.driver = webdriver.Chrome(service=service,options=self.options)
+        self.driver.header_overrides={"Authorization":self.authorization}
+        for request in self.driver.requests:
+            print(request.headers)
+            break  #只打印一次即可
+
+    
+    def interceptor(self, request):
+        request.headers['Authorization'] = self.authorization
+        print(request.headers)
     
     def refresh_driver(self):
         self.update_cookie(self.driver)
@@ -76,5 +87,17 @@ class web_d():
         self.driver.get(url.encode('ascii', 'ignore').decode('unicode_escape'))
         return(self.driver)
     
+    def get_authorization(self):
+        self.driver.get("""https://cdn.thingiverse.com/site/js/app.bundle.js""")
+        time.sleep(3)
+        ddd = self.driver.page_source
+        self.authorization = 'Bearer ' + re.findall("""d=.*,f=""",re.findall("""86744.*;""",ddd)[0])[0].split(',')[0].split('"')[1]
+        print(self.authorization)
+    
     def close(self):
         self.driver.quit()
+        
+def download_files1(web_d,itemId):
+    print(web_d.authorization)
+    web_d.read_data_from('https://www.thingiverse.com/api/things/{}/FilesDownloadCounterIncrease?t={}'.format(itemId,int(round(time.time()*1000))))
+    
